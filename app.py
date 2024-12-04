@@ -15,12 +15,10 @@ PORT = int(os.getenv('PORT', 5000))
 jwt = JWTManager(app)
 
 
-@app.route("/")
-def hello():
-    return "Hello World!"
 
 
-# Database initialization
+# CREATE DATABASES
+# Database for subscription and additional services 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -29,14 +27,19 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             car_id INTEGER NOT NULL,
-            first_name TEXT NOT NULL,
-            last_name TEXT NOT NULL,
-            email TEXT NOT NULL,
-            car_model TEXT NOT NULL,
-            subsription_start_date TEXT NOT NULL,
+            additional_service_id INTEGER NOT NULL,   
+            subscription_start_date TEXT NOT NULL,
             subscription_end_date TEXT NOT NULL,
             price_per_month FLOAT NOT NULL
     
+        );
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS additional_services (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            service_name TEXT NOT NULL,
+            price FLOAT NOT NULL,
+            description TEXT
         );
     ''')
     conn.commit()
@@ -45,25 +48,21 @@ def init_db():
 
 
 # Create a new subscription
-
 @app.route('/subscription', methods=['POST'])
 def create_subscription():
     data = request.get_json()
-    required_fields = ['user_id', 'car_id', 'first_name', 'last_name', 'email', 'car_model', 'subsription_start_date', 'subscription_end_date', 'price_per_month']
+    required_fields = ['user_id', 'car_id', 'additional_service_id', 'subscription_start_date', 'subscription_end_date', 'price_per_month']
     
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
         c.execute('''
-        INSERT INTO subscription (user_id, car_id, first_name, last_name, email, car_model, subsription_start_date, subscription_end_date, price_per_month)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO subscription (user_id, car_id, additional_service_id, subscription_start_date, subscription_end_date, price_per_month)
+        VALUES (?, ?, ?, ?, ?, ?)
     ''',( 
         data['user_id'],
-        data['car_id'],
-        data['first_name'], 
-        data['last_name'], 
-        data['email'], 
-        data['car_model'], 
-        data['subsription_start_date'], 
+        data['car_id'], 
+        data['additional_service_id'],
+        data['subscription_start_date'], 
         data['subscription_end_date'], 
         data['price_per_month']
 
@@ -73,7 +72,29 @@ def create_subscription():
 
 
 
+# Create additional services
+@app.route('/additional_services', methods=['POST'])
+def create_additional_services():
+    data = request.get_json()
+    required_fields = ['service_name', 'price', 'description']
+    
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute('''
+        INSERT INTO additional_services (service_name, price, description)
+        VALUES (?, ?, ?)
+    ''',( 
+        data['service_name'],
+        data['price'],
+        data['description']
+    ))
+    conn.commit()
+    return jsonify({'message': 'Additional service created successfully'}), 201
 
+
+
+# -----------------------------------------------------
+# ENDPOINTS
 
 # Get a subscription by User_id
 @app.route('/subscription/<int:user_id>', methods=['GET'])
@@ -81,20 +102,61 @@ def get_subscription_by_user(user_id):
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
+
+        # Gets all subscriptions for a user
         c.execute("SELECT * FROM subscription WHERE user_id = ?", (user_id,))
         subscriptions = c.fetchall()
 
-    if not subscriptions:
-        return jsonify({'message': 'Subscription not found'}), 404
+        # If no subscriptions are found, return 404
+        if not subscriptions:
+            return jsonify({'message': 'Subscription not found'}), 404
+
+        results = []
+
+        # Itarate through all subscriptions
+        for subscription in subscriptions:
+            additional_service = None
+            if subscription['additional_service_id']:
+                c.execute("SELECT * FROM additional_services WHERE id = ?", (subscription['additional_service_id'],))
+                additional_service = c.fetchone()
+
+            # Combine subscription and additional service
+            results.append({
+                "id": subscription['id'],
+                "user_id": subscription['user_id'],
+                "car_id": subscription['car_id'],
+                "subscription_start_date": subscription['subscription_start_date'],
+                "subscription_end_date": subscription['subscription_end_date'],
+                "price_per_month": subscription['price_per_month'],
+                "additional_service": dict(additional_service) if additional_service else None
+            })
+
+    # Return the combined data
+    return jsonify({'subscriptions': results}), 200
+
+
+
+
+# Get additional services by service_id
+@app.route('/additional_services/<int:service_id>', methods=['GET'])
+def get_additional_services_by_id(service_id):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        
+        c.execute("SELECT * FROM additional_services WHERE id = ?", (service_id,))
+        additional_services = c.fetchall()
+
+    if not additional_services:
+        return jsonify({'message': 'Additional services not found'}), 404
     
 
-    return jsonify({'subscriptions': [dict(row) for row in subscriptions]}), 200
-
+    return jsonify({'additional_services': [dict(row) for row in additional_services]}), 200
 
 
 
 
 
 load_dotenv()
-init_db()
+#init_db()
 app.run(debug=True)
