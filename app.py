@@ -111,28 +111,37 @@ def get_subscription_by_user(user_id):
         if not subscriptions:
             return jsonify({'message': 'Subscription not found'}), 404
 
-        results = []
+        results = {}
 
-        # Itarate through all subscriptions
+        # Organize the data in JSON format
         for subscription in subscriptions:
-            additional_service = None
-            if subscription['additional_service_id']:
-                c.execute("SELECT * FROM additional_services WHERE id = ?", (subscription['additional_service_id'],))
-                additional_service = c.fetchone()
+             #Use user_id and subscription_start_date as the key to group the data
+            key = (subscription['user_id'], subscription['subscription_start_date'])
 
-            # Combine subscription and additional service
-            results.append({
-                "id": subscription['id'],
-                "user_id": subscription['user_id'],
-                "car_id": subscription['car_id'],
-                "subscription_start_date": subscription['subscription_start_date'],
-                "subscription_end_date": subscription['subscription_end_date'],
-                "price_per_month": subscription['price_per_month'],
-                "additional_service": dict(additional_service) if additional_service else None
-            })
-
-    # Return the combined data
-    return jsonify({'subscriptions': results}), 200
+            if key not in results:
+                    results[key] = {
+                        "id": subscription['id'],
+                        "user_id": subscription['user_id'],
+                        "car_id": subscription['car_id'],
+                        "subscription_start_date": subscription['subscription_start_date'],
+                        "subscription_end_date": subscription['subscription_end_date'],
+                        "price_per_month": subscription['price_per_month'],
+                        "additional_services": []
+                    }
+    
+            # Get information about the additional services
+            c.execute("SELECT * FROM additional_services WHERE id = ?", (subscription['additional_service_id'],))
+            service = c.fetchone()
+            if service:
+                    results[key]['additional_services'].append({
+                        "id": service['id'],
+                        "service_name": service['service_name'],
+                        "price": service['price'],
+                        "description": service['description']
+                    })
+            
+    # Return the combined data, and convert the result to a list
+    return jsonify({'subscriptions': list(results.values())}), 200
 
 
 
