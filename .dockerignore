@@ -11,4 +11,4 @@ venv/
 .gitignore
 README.md
 *.md
-customer.db
+subscription.db
