@@ -110,6 +110,7 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
+    init_db()
 
 
 # -----------------------------------------------------
@@ -274,7 +275,5 @@ def get_additional_services_by_id(service_id):
 
 
 
-
-
-init_db()
-app.run(debug=True)
+if __name__ == '__main__':
+    app.run(debug=True)
