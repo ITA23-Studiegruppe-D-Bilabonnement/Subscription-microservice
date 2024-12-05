@@ -203,11 +203,11 @@ def get_subscription_by_customer(customer_id):
 
             # Get the price of the car from the car microservice
             try:
-                response = requests.get(f"{DB_PATH2}/cars")
+                response = requests.get(f"{DB_PATH2}")
                 cars = response.json()
 
                 # Find the price of the car by car_id
-                car = next((car for car in cars if car['id'] == subscription['car_id']), None)
+                car = next((car for car in cars if car.get['car_id'] == subscription['car_id']), None)
 
                 # If the car exists, get the price or set it to 0
                 car_price = car['price'] if car else 0
