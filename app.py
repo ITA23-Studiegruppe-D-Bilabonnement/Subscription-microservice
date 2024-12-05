@@ -203,6 +203,7 @@ def get_subscription_by_customer(customer_id):
                 try:
                     response = requests.get(DB_PATH2)
                     response.raise_for_status()  # Check if the request was successful
+                    print(f"Car service response: {response.text}")  # Debugging log
                     cars = response.json()
 
                     # Ensure cars is a list
