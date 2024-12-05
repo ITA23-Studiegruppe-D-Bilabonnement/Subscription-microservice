@@ -6,6 +6,7 @@ import json
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token
 from dotenv import load_dotenv
 from flasgger import Swagger, swag_from
+from swagger.swagger_config import init_swagger
 
 # Load environment variables
 load_dotenv()
@@ -24,6 +25,9 @@ PORT = int(os.getenv('PORT', 5000))
 jwt = JWTManager(app)
 
 
+# Initialize Swagger
+init_swagger(app)
+
 # Homepoint - "/"
 @app.route("/", methods=["GET"])
 def homepoint():
@@ -40,7 +44,7 @@ def homepoint():
                 "METHOD": "POST",
                 "DESCRIPTION": "Create a new subscription",
                 "BODY": {
-                    "user_id": "INTEGER",
+                    "customer_id": "INTEGER",
                     "car_id": "INTEGER",
                     "additional_service_id": "INTEGER",
                     "subscription_start_date": "STRING (YYYY-MM-DD)",
@@ -49,11 +53,11 @@ def homepoint():
                 }
             },
             {
-                "PATH": "/subscription/<user_id>",
+                "PATH": "/subscription/<customer_id>",
                 "METHOD": "GET",
                 "DESCRIPTION": "Retrieve subscriptions for a specific user",
                 "PARAMETER": {
-                    "user_id": "INTEGER"
+                    "customer_id": "INTEGER"
                 }
             },
             {
@@ -89,7 +93,7 @@ def init_db():
     c.execute('''
         CREATE TABLE IF NOT EXISTS subscription (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
+            customer_id INTEGER NOT NULL,
             car_id INTEGER NOT NULL,
             additional_service_id TEXT NOT NULL,   
             subscription_start_date TEXT NOT NULL,
@@ -113,9 +117,10 @@ def init_db():
 
 # Create a new subscription
 @app.route('/subscription', methods=['POST'])
+@swag_from("swagger/subscription(post).yaml")
 def create_subscription():
     data = request.get_json()
-    required_fields = ['user_id', 'car_id', 'additional_service_id', 'subscription_start_date', 'subscription_end_date']
+    required_fields = ['customer_id', 'car_id', 'additional_service_id', 'subscription_start_date', 'subscription_end_date']
     
 
     # Check if the additional_service_id is a list
@@ -130,10 +135,10 @@ def create_subscription():
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
         c.execute('''
-        INSERT INTO subscription (user_id, car_id, additional_service_id, subscription_start_date, subscription_end_date)
+        INSERT INTO subscription (customer_id, car_id, additional_service_id, subscription_start_date, subscription_end_date)
         VALUES (?, ?, ?, ?, ?)
     ''',( 
-        data['user_id'],
+        data['customer_id'],
         data['car_id'], 
         additional_service_id_json,
         data['subscription_start_date'], 
@@ -146,6 +151,7 @@ def create_subscription():
 
 # Create additional services
 @app.route('/additional_services', methods=['POST'])
+@swag_from("swagger/additional_services(post).yaml")
 def create_additional_services():
     data = request.get_json()
     required_fields = ['service_name', 'price', 'description']
@@ -169,14 +175,15 @@ def create_additional_services():
 # ENDPOINTS GET
 
 # Get a subscription by User_id
-@app.route('/subscription/<int:user_id>', methods=['GET'])
-def get_subscription_by_user(user_id):
+@app.route('/subscription/<int:customer_id>', methods=['GET'])
+@swag_from("swagger/customer_id(get).yaml")
+def get_subscription_by_customer(customer_id):
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
 
         # Gets all subscriptions for a user
-        c.execute("SELECT * FROM subscription WHERE user_id = ?", (user_id,))
+        c.execute("SELECT * FROM subscription WHERE customer_id = ?", (customer_id,))
         subscriptions = c.fetchall()
 
         # If no subscriptions are found, return 404
@@ -231,7 +238,7 @@ def get_subscription_by_user(user_id):
         # Get the results in a list
             results.append({
                 "id": subscription['id'],
-                "user_id": subscription['user_id'],
+                "customer_id": subscription['customer_id'],
                 "car_id": subscription['car_id'],
                 "subscription_start_date": subscription['subscription_start_date'],
                 "subscription_end_date": subscription['subscription_end_date'],
@@ -249,6 +256,7 @@ def get_subscription_by_user(user_id):
 
 # Get additional services by service_id
 @app.route('/additional_services/<int:service_id>', methods=['GET'])
+@swag_from("swagger/service_id(get).yaml")
 def get_additional_services_by_id(service_id):
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row

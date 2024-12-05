@@ -1,0 +1,44 @@
+tags:
+  - name: Additional Services
+summary: Create a new additional service
+description: Adds a new additional service to the database.
+parameters:
+  - in: body
+    name: body
+    required: true
+    description: Details of the additional service to be created.
+    schema:
+      type: object
+      properties:
+        service_name:
+          type: string
+          description: Name of the additional service.
+          example: "Premium Wash"
+        price:
+          type: float
+          description: Price of the additional service.
+          example: 250.0
+        description:
+          type: string
+          description: Description of the additional service.
+          example: "A complete car wash with premium wax and polish"
+responses:
+  201:
+    description: Additional service created successfully
+    schema:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Additional service created successfully"
+  500:
+    description: Internal server error
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "OOPS! Something went wrong :("
+        message:
+          type: string
+          example: "Error details"

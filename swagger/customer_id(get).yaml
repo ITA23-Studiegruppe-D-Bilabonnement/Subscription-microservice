@@ -1,0 +1,76 @@
+tags:
+  - name: Subscription Management
+summary: Get subscriptions by customer ID
+description: Retrieves all subscriptions for a specific customer.
+parameters:
+  - in: path
+    name: customer_id
+    required: true
+    type: integer
+    description: The ID of the customer whose subscriptions you want to retrieve.
+    example: 1
+responses:
+  200:
+    description: Subscriptions retrieved successfully
+    schema:
+      type: object
+      properties:
+        subscriptions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 1
+              customer_id:
+                type: integer
+                example: 1
+              car_id:
+                type: integer
+                example: 42
+              subscription_start_date:
+                type: string
+                example: "2024-01-01"
+              subscription_end_date:
+                type: string
+                example: "2024-12-31"
+              car_price:
+                type: float
+                example: 15000.0
+              additional_service:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 101
+                    service_name:
+                      type: string
+                      example: "Premium Wash"
+                    price:
+                      type: float
+                      example: 250.0
+              total_price:
+                type: float
+                example: 15250.0
+  404:
+    description: Subscriptions not found
+    schema:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Subscription not found"
+  500:
+    description: Internal server error
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "OOPS! Something went wrong :("
+        message:
+          type: string
+          example: "Error details"

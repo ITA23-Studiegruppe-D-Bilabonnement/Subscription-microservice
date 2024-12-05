@@ -1,0 +1,53 @@
+tags:
+  - name: Additional Services
+summary: Get additional service by ID
+description: Retrieves details of a specific additional service by its ID.
+parameters:
+  - in: path
+    name: service_id
+    required: true
+    type: integer
+    description: The ID of the additional service to retrieve.
+    example: 101
+responses:
+  200:
+    description: Additional service retrieved successfully
+    schema:
+      type: object
+      properties:
+        additional_services:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 101
+              service_name:
+                type: string
+                example: "Premium Wash"
+              price:
+                type: float
+                example: 250.0
+              description:
+                type: string
+                example: "A complete car wash with premium wax and polish"
+  404:
+    description: Additional service not found
+    schema:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Additional services not found"
+  500:
+    description: Internal server error
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "OOPS! Something went wrong :("
+        message:
+          type: string
+          example: "Error details"
