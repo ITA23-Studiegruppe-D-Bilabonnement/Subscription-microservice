@@ -110,7 +110,7 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
-init_db()
+#init_db()
 
 
 # -----------------------------------------------------
@@ -179,78 +179,79 @@ def create_additional_services():
 @app.route('/subscription/<int:customer_id>', methods=['GET'])
 @swag_from("swagger/customer_id(get).yaml")
 def get_subscription_by_customer(customer_id):
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.row_factory = sqlite3.Row
-        c = conn.cursor()
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
 
-        # Gets all subscriptions for a user
-        c.execute("SELECT * FROM subscription WHERE customer_id = ?", (customer_id,))
-        subscriptions = c.fetchall()
+            # Gets all subscriptions for a user
+            c.execute("SELECT * FROM subscription WHERE customer_id = ?", (customer_id,))
+            subscriptions = c.fetchall()
 
-        # If no subscriptions are found, return 404
-        if not subscriptions:
-            return jsonify({'message': 'Subscription not found'}), 404
+            # If no subscriptions are found, return 404
+            if not subscriptions:
+                return jsonify({'message': 'Subscription not found'}), 404
 
-        results = []
+            results = []
 
-        # Organize the data in JSON format
-        for subscription in subscriptions:
+            # Organize the data in JSON format
+            for subscription in subscriptions:
+                # Decode the additional_service_id from JSON
+                additional_service_ids = json.loads(subscription['additional_service_id'])
 
-            # Decode the additional_service_id from JSON
-            additional_service_ids = json.loads(subscription['additional_service_id'])
+                # Get the price of the car from the car microservice
+                try:
+                    response = requests.get(DB_PATH2)
+                    response.raise_for_status()  # Check if the request was successful
+                    cars = response.json()
 
+                    # Ensure cars is a list
+                    if not isinstance(cars, list):
+                        return jsonify({'error': 'Invalid response from car microservice'}), 500
 
+                    # Find the price of the car by car_id
+                    car = next((car for car in cars if car.get('car_id') == subscription['car_id']), None)
+                    car_price = car['price'] if car else 0
 
-            # Get the price of the car from the car microservice
-            try:
-                response = requests.get(f"{DB_PATH2}")
-                cars = response.json()
+                except requests.exceptions.RequestException as e:
+                    print(f"Request error: {e}")
+                    car_price = 0
 
-                # Find the price of the car by car_id
-                car = next((car for car in cars if car.get['car_id'] == subscription['car_id']), None)
+                # Get information about the additional services
+                additional_services = []
+                for service_id in additional_service_ids:
+                    c.execute("SELECT * FROM additional_services WHERE id = ?", (service_id,))
+                    service = c.fetchone()
+                    if service:
+                        additional_services.append({
+                            "id": service['id'],
+                            "service_name": service['service_name'],
+                            "price": service['price'],
+                            "description": service['description']
+                        })
 
-                # If the car exists, get the price or set it to 0
-                car_price = car['price'] if car else 0
-            
-            except requests.exceptions.RequestException as e:
-                car_price = 0
+                # Calculate the total price of additional services and the subscription
+                price_of_additional_services = sum(service["price"] for service in additional_services)
+                total_price = car_price + price_of_additional_services
 
+                # Get the results in a list
+                results.append({
+                    "id": subscription['id'],
+                    "customer_id": subscription['customer_id'],
+                    "car_id": subscription['car_id'],
+                    "subscription_start_date": subscription['subscription_start_date'],
+                    "subscription_end_date": subscription['subscription_end_date'],
+                    "car_price": car_price,
+                    "additional_service": additional_services,
+                    "total_price": total_price
+                })
 
+        return jsonify({'subscriptions': results}), 200
 
-            # Get information about the additional services
-            additional_services = []
-            for service_id in additional_service_ids:
-                c.execute("SELECT * FROM additional_services WHERE id = ?", (service_id,))
-                service = c.fetchone()
-                if service:
-                    additional_services.append({
-                        "id": service['id'],
-                        "service_name": service['service_name'],
-                        "price": service['price'],
-                        "description": service['description']
-                    })
+    except Exception as e:
+        print(f"Internal server error: {e}")
+        return jsonify({'error': 'Internal server error occurred'}), 500
 
-         
-            # Calculate the total price of additional services and the subscription
-            price_of_additional_services = sum(service["price"] for service in additional_services)
-            total_price = car_price + price_of_additional_services
-
-
-        # Get the results in a list
-            results.append({
-                "id": subscription['id'],
-                "customer_id": subscription['customer_id'],
-                "car_id": subscription['car_id'],
-                "subscription_start_date": subscription['subscription_start_date'],
-                "subscription_end_date": subscription['subscription_end_date'],
-                "car_price": car_price,
-                "additional_service": additional_services,
-                "total_price": total_price 
-            })
-
-
-# Return the combined data, and convert the result to a list
-    return jsonify({'subscriptions': results}), 200
 
 
 
