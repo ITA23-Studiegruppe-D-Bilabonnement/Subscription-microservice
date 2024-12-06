@@ -16,7 +16,8 @@ app = Flask(__name__)
 # Environment variables
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 DB_PATH = os.getenv('SQLITE_DB_PATH')
-DB_PATH_cars = os.getenv('CAR_MICROSERVICE_URL', 'https://cars-microservice-a7g2hqakb2cjffef.northeurope-01.azurewebsites.net')
+DB_PATH_cars = os.getenv('CAR_MICROSERVICE_URL', "https://cars-microservice-a7g2hqakb2cjffef.northeurope-01.azurewebsites.net")
+print(DB_PATH_cars)
 
 
 PORT = int(os.getenv('PORT', 5000))
@@ -148,7 +149,9 @@ def create_subscription():
             return jsonify({'error': 'additional_service_id must be a list'}), 400
 
     #Notify the cars microservice that a new subscription has been created
+
     requests.put(f"{DB_PATH_cars}/update-status/{car_id}")
+    print(f"{DB_PATH_cars}/update-status/{car_id}")
     
     #response = requests.post(f"{DB_PATH_cars}/{car_id}")
     #if response.status_code == 200:
@@ -323,13 +326,21 @@ def get_additional_services_by_id(service_id):
 @app.route('/cancel_subscription/<int:subscription_id>', methods=['PATCH'])
 @swag_from("swagger/cancel_subscription.yaml")
 def cancel_subscription(subscription_id):
-    data = request.get_json()
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute("SELECT car_id FROM subscription WHERE id = ?", (subscription_id,))
+        result = c.fetchone()
 
-    car_id = data['car_id']
+        if not result:
+            return jsonify({'message': 'Subscription not found'}), 404
+
+        car_id = result[0]
+
 
     #Notify the cars microservice that subscription has been deactivated
-    requests.put(f"{DB_PATH_cars}/update-status/{car_id}")
-
+    test = requests.put(f"{DB_PATH_cars}/update-status/{car_id}")
+    print(test)
+    print(f"{DB_PATH_cars}/update-status/{car_id}")
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
         c.execute("UPDATE subscription SET subscription_status = 0 WHERE id = ?", (subscription_id,))
