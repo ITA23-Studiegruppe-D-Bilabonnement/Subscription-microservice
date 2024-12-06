@@ -81,6 +81,41 @@ GET /additional_services/101
 }
 ```
 
+## Cancel subscription
+  - **URL:** /cancel_subscription/<subscription_id>
+  - **Method:** PATCH
+  - **Description:** Cancels an active subscription by setting its status to               inactive and notifying the car microservices to update the car's status.
+
+  - **Path Parameter:**
+      - **subscription_id (integer):** The ID of the subscription to be cancelled.
+   
+  - **Response:**
+      - **200 OK:** Subscription cancelled succesfully.
+        ```json
+        {
+        "message": "Subscription cancelled succesfully"
+       }
+        ```
+
+      - **400 Not Found:** Subscription not found.
+        ```json
+        {
+        "message": "Subscription not found"
+        }
+        ```
+
+      - **500 Internal Server Error:** An unexpected error occured.
+        ```json
+        {
+        "error": "OOPS! Something went wrong :(",
+        "message": "Error details"
+        }
+        ```
+
+
+
+
+
 
 ## Environment Variables
 | Variable | Required | Default | Description |
