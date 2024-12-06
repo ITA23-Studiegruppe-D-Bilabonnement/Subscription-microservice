@@ -94,7 +94,7 @@ GET /additional_services/101
         ```json
         {
         "message": "Subscription cancelled succesfully"
-       }
+         }
         ```
 
       - **400 Not Found:** Subscription not found.
