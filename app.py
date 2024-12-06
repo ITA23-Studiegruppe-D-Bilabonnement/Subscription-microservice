@@ -16,7 +16,8 @@ app = Flask(__name__)
 # Environment variables
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 DB_PATH = os.getenv('SQLITE_DB_PATH')
-DB_PATH2 = os.getenv('CAR_MICROSERVICE_URL')
+DB_PATH_cars = os.getenv('CAR_MICROSERVICE_URL')
+DB_PATH_customer = os.getenv('CUSTOMER_MICROSERVICE_URL')
 
 PORT = int(os.getenv('PORT', 5000))
 
@@ -83,9 +84,9 @@ def homepoint():
 
 
 
-
-
+# -----------------------------------------------------
 # CREATE DATABASES
+
 # Database for subscription and additional services 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -97,7 +98,8 @@ def init_db():
             car_id INTEGER NOT NULL,
             additional_service_id TEXT NOT NULL,   
             subscription_start_date TEXT NOT NULL,
-            subscription_end_date TEXT NOT NULL
+            subscription_end_date TEXT NOT NULL,
+            subscription_status BOOLEAN NOT NULL DEFAULT 1
         );
     ''')
     c.execute('''
@@ -121,7 +123,11 @@ init_db()
 @swag_from("swagger/subscription(post).yaml")
 def create_subscription():
     data = request.get_json()
-    required_fields = ['customer_id', 'car_id', 'additional_service_id', 'subscription_start_date', 'subscription_end_date']
+    required_fields = ['customer_id', 'car_id', 'additional_service_id', 'subscription_start_date', 'subscription_end_date', 'subscription_status']
+    
+    # Standard subscription status is 1 = active
+    subscription_status = data.get('subscription_status', True)
+    
     
 
     # Check if the additional_service_id is a list
@@ -136,14 +142,15 @@ def create_subscription():
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
         c.execute('''
-        INSERT INTO subscription (customer_id, car_id, additional_service_id, subscription_start_date, subscription_end_date)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO subscription (customer_id, car_id, additional_service_id, subscription_start_date, subscription_end_date, subscription_status)
+        VALUES (?, ?, ?, ?, ?, ?)
     ''',( 
         data['customer_id'],
         data['car_id'], 
         additional_service_id_json,
         data['subscription_start_date'], 
-        data['subscription_end_date'] 
+        data['subscription_end_date'], 
+        data['subscription_status']
     ))
     conn.commit()
     return jsonify({'message': 'Subscription created successfully'}), 201
@@ -175,7 +182,7 @@ def create_additional_services():
 # -----------------------------------------------------
 # ENDPOINTS GET
 
-# Get a subscription by User_id
+# Get a subscription by customer_id
 @app.route('/subscription/<int:customer_id>', methods=['GET'])
 @swag_from("swagger/customer_id(get).yaml")
 def get_subscription_by_customer(customer_id):
@@ -184,24 +191,25 @@ def get_subscription_by_customer(customer_id):
             conn.row_factory = sqlite3.Row
             c = conn.cursor()
 
-            # Gets all subscriptions for a user
+            # Gets all subscriptions for a customer
             c.execute("SELECT * FROM subscription WHERE customer_id = ?", (customer_id,))
             subscriptions = c.fetchall()
 
-            # If no subscriptions are found, return 404
             if not subscriptions:
                 return jsonify({'message': 'Subscription not found'}), 404
 
             results = []
 
-            # Organize the data in JSON format
+            
             for subscription in subscriptions:
                 # Decode the additional_service_id from JSON
                 additional_service_ids = json.loads(subscription['additional_service_id'])
 
-                # Get the price of the car from the car microservice
+                
+                
+                # Get information about the car from the car microservice
                 try:
-                    response = requests.get(DB_PATH2)
+                    response = requests.get(DB_PATH_cars)
                     response.raise_for_status()  # Check if the request was successful
                     print(f"Car service response: {response.text}")  # Debugging log
                     cars = response.json()
@@ -210,13 +218,21 @@ def get_subscription_by_customer(customer_id):
                     if not isinstance(cars, list):
                         return jsonify({'error': 'Invalid response from car microservice'}), 500
 
-                    # Find the price of the car by car_id
+                    # Find car details by car_id
                     car = next((car for car in cars if car.get('car_id') == subscription['car_id']), None)
                     car_price = car['price'] if car else 0
+                    car_brand = car.get('car_brand', 'Unknown')
+                    car_model = car.get('car_model', 'Unknown')
+                    engine_type = car.get('engine_type', 'Unknown')
 
                 except requests.exceptions.RequestException as e:
                     print(f"Request error: {e}")
                     car_price = 0
+                    car_brand = 'Unknown'
+                    car_model = 'Unknown'
+                    engine_type = 'Unknown'
+                    
+                    
 
                 # Get information about the additional services
                 additional_services = []
@@ -242,7 +258,11 @@ def get_subscription_by_customer(customer_id):
                     "car_id": subscription['car_id'],
                     "subscription_start_date": subscription['subscription_start_date'],
                     "subscription_end_date": subscription['subscription_end_date'],
+                    "subscription_status": subscription['subscription_status'],
                     "car_price": car_price,
+                    "car_brand": car_brand,
+                    "car_model": car_model,
+                    "engine_type": engine_type,
                     "additional_service": additional_services,
                     "total_price": total_price
                 })
@@ -273,6 +293,23 @@ def get_additional_services_by_id(service_id):
     
 
     return jsonify({'additional_services': [dict(row) for row in additional_services]}), 200
+
+
+
+
+# -----------------------------------------------------
+# Cancel subscription
+
+@app.route('/cancel_subscription/<int:subscription_id>', methods=['PATCH'])
+# OPRET SWAGGER
+def cancel_subscription(subscription_id):
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute("UPDATE subscription SET subscription_status = 0 WHERE id = ?", (subscription_id,))
+        conn.commit()
+
+    return jsonify({'message': 'Subscription cancelled successfully'}), 200
+
 
 
 
