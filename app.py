@@ -16,8 +16,8 @@ app = Flask(__name__)
 # Environment variables
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 DB_PATH = os.getenv('SQLITE_DB_PATH')
-DB_PATH_cars = os.getenv('CAR_MICROSERVICE_URL')
-DB_PATH_customer = os.getenv('CUSTOMER_MICROSERVICE_URL')
+DB_PATH_cars = os.getenv('CAR_MICROSERVICE_URL', 'https://cars-microservice-a7g2hqakb2cjffef.northeurope-01.azurewebsites.net')
+
 
 PORT = int(os.getenv('PORT', 5000))
 
@@ -47,10 +47,10 @@ def homepoint():
                 "BODY": {
                     "customer_id": "INTEGER",
                     "car_id": "INTEGER",
-                    "additional_service_id": "INTEGER",
+                    "additional_service_id": "ARRAY of INTEGER",
                     "subscription_start_date": "STRING (YYYY-MM-DD)",
                     "subscription_end_date": "STRING (YYYY-MM-DD)",
-                    "price_per_month": "FLOAT"
+                    "subscription_status": "BOOLEAN (default: TRUE)"
                 }
             },
             {
@@ -78,9 +78,21 @@ def homepoint():
                 "PARAMETER": {
                     "service_id": "INTEGER"
                 }
+            },
+            {
+                "PATH": "/cancel_subscription/<subscription_id>",
+                "METHOD": "PATCH",
+                "DESCRIPTION": "Cancel a subscription by setting its status to inactive and notifying the car microservice",
+                "PARAMETER": {
+                    "subscription_id": "INTEGER"
+                },
+                "BODY": {
+                    "car_id": "INTEGER"
+                }
             }
         ]
     })
+
 
 
 
@@ -128,13 +140,21 @@ def create_subscription():
     # Standard subscription status is 1 = active
     subscription_status = data.get('subscription_status', True)
     
-    
+    car_id = data['car_id']
 
     # Check if the additional_service_id is a list
     additional_service_id = data['additional_service_id']
     if not isinstance(additional_service_id, list):
             return jsonify({'error': 'additional_service_id must be a list'}), 400
 
+    #Notify the cars microservice that a new subscription has been created
+    requests.put(f"{DB_PATH_cars}/update-status/{car_id}")
+    
+    #response = requests.post(f"{DB_PATH_cars}/{car_id}")
+    #if response.status_code == 200:
+        #print("Car status updated successfully!")
+    #else: 
+        #print("Car status update failed!", response.json())
 
     # Save additional services as a list
     additional_service_id_json = json.dumps(additional_service_id)
@@ -301,8 +321,15 @@ def get_additional_services_by_id(service_id):
 # Cancel subscription
 
 @app.route('/cancel_subscription/<int:subscription_id>', methods=['PATCH'])
-# OPRET SWAGGER
+@swag_from("swagger/cancel_subscription.yaml")
 def cancel_subscription(subscription_id):
+    data = request.get_json()
+
+    car_id = data['car_id']
+
+    #Notify the cars microservice that subscription has been deactivated
+    requests.put(f"{DB_PATH_cars}/update-status/{car_id}")
+
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
         c.execute("UPDATE subscription SET subscription_status = 0 WHERE id = ?", (subscription_id,))

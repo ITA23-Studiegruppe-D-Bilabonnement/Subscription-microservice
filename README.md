@@ -75,7 +75,7 @@ This Flask-based microservice provides an API for managing subscriptions, cars, 
   - `404 Not Found:` No additional service found with the specified ID.
 Example Request:
 
-```json
+```json  
 {
 GET /additional_services/101
 }
