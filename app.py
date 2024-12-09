@@ -3,7 +3,7 @@ import requests
 import sqlite3
 import os
 import json
-from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token, get_jwt
 from dotenv import load_dotenv
 from flasgger import Swagger, swag_from
 from swagger.swagger_config import init_swagger
@@ -159,8 +159,9 @@ def create_subscription():
     
     #Notify the cars microservice that a new subscription has been created
     car_id = data['car_id']
+    print(car_id)
     try:
-        response = requests.get(f"{DB_PATH_cars}/update-status/{car_id}")
+        response = requests.put(f"{DB_PATH_cars}/update-status/{car_id}")
         response.raise_for_status()  # Check if the request was successful
     except requests.exceptions.RequestException as e:    
         print(f"{DB_PATH_cars}/update-status/{car_id}")
@@ -223,14 +224,23 @@ def create_additional_services():
 @app.route('/subscription', methods=['GET'])
 @jwt_required()
 @swag_from("swagger/customer_id(get).yaml")
-def get_subscription_by_customer(customer_id):
+def get_subscription_by_customer():
     
     # Get the current logged in user
     try:
         current_userid = get_jwt_identity()
+        
+        # Get the token from the Authorization header
+        jwt_token = request.headers.get('Authorization', '').split(' ')[1]
+        if not jwt_token:
+            return jsonify({'error': 'Missing Authorization header'}), 401
+
+        # Prepare the headers for the request to the customer microservice
+        headers = {'Authorization': f'Bearer {jwt_token}'}
+
 
         try:
-            customer_response = requests.get(f"{DB_PATH_customer}/user")
+            customer_response = requests.get(f"{DB_PATH_customer}/user", headers=headers)
             customer_response.raise_for_status()  # Check if the request was successful
             customer_data = customer_response.json()
             first_name = customer_data.get('first_name', 'Unknown')
@@ -239,8 +249,6 @@ def get_subscription_by_customer(customer_id):
         except requests.exceptions.RequestException as e:
             return jsonify({'error': 'Error fetching user data from customer microservice', 'message': str(e)}), 500
      
-    
-
     
         with sqlite3.connect(DB_PATH) as conn:
             conn.row_factory = sqlite3.Row
@@ -262,7 +270,7 @@ def get_subscription_by_customer(customer_id):
      
                 # Get information about the car from the car microservice
                 try:
-                    response = requests.get(DB_PATH_cars)
+                    response = requests.get(f"{DB_PATH_cars}/cars")
                     response.raise_for_status()  # Check if the request was successful
                     print(f"Car service response: {response.text}")  # Debugging log
                     cars = response.json()
