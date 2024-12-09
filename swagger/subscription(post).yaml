@@ -1,42 +1,38 @@
 tags:
   - name: Subscription Management
 summary: Create a new subscription
-description: Creates a new subscription for a customer, including car details and additional services.
+description: Create a new subscription for the logged-in user.
 parameters:
   - in: body
     name: body
     required: true
-    description: Subscription details to be created.
+    description: Details of the subscription to be created.
     schema:
       type: object
       properties:
-        customer_id:
-          type: integer
-          description: The ID of the customer for the subscription.
-          example: 1
         car_id:
           type: integer
-          description: The ID of the car for the subscription.
           example: 42
         additional_service_id:
           type: array
           items:
             type: integer
-          description: List of additional service IDs for the subscription.
+          description: List of IDs for additional services.
           example: [101, 102]
         subscription_start_date:
           type: string
           format: date
-          description: Start date of the subscription in YYYY-MM-DD format.
           example: "2024-01-01"
         subscription_end_date:
           type: string
           format: date
-          description: End date of the subscription in YYYY-MM-DD format.
           example: "2024-12-31"
+        subscription_status:
+          type: boolean
+          default: true
 responses:
   201:
-    description: Subscription created successfully
+    description: Subscription created successfully.
     schema:
       type: object
       properties:
@@ -44,21 +40,18 @@ responses:
           type: string
           example: "Subscription created successfully"
   400:
-    description: Invalid input
+    description: Bad Request.
     schema:
       type: object
       properties:
         error:
           type: string
-          example: "additional_service_id must be a list"
+          example: "Field is required"
   500:
-    description: Internal server error
+    description: Internal server error.
     schema:
       type: object
       properties:
         error:
           type: string
-          example: "OOPS! Something went wrong :("
-        message:
-          type: string
-          example: "Error details"
+          example: "Error notifying the car microservice"

@@ -1,6 +1,16 @@
 # Subscription Management Microservice
 
-This Flask-based microservice provides an API for managing subscriptions, cars, and additional services. It allows users to create, view, and manage subscriptions and additional services stored in a database.
+This microservice is designed for managing customer subscriptions, associated car details, and additional services. Built with Flask, it provides a RESTful API to handle the creation, retrieval, and management of subscriptions and services. The service interacts with a SQLite database and integrates with external microservices.
+
+
+## Available Endpoints
+- `POST /subscription`: Create a new subscription.
+- `GET /subscription/<customer_id>`: Retrieve subscriptions by customer ID.
+- `POST /additional_services`: Add a new additional service.
+- `GET /additional_services/<service_id>`: Retrieve additional service details by ID.
+- `PATCH /cancel_subscription/<subscription_id>`: Cancel an active subscription.
+
+
 
 ## Endpoints
 
@@ -73,44 +83,50 @@ This Flask-based microservice provides an API for managing subscriptions, cars, 
 - **Response:**
   - `200 OK:` Returns details of the additional service in JSON format.
   - `404 Not Found:` No additional service found with the specified ID.
-Example Request:
 
-```json  
+### Example Request:
+`GET /additional_services/101`
+
+### Example Response:
+```json
 {
-GET /additional_services/101
+  "id": 101,
+  "service_name": "Premium Wash",
+  "price": 250.0,
+  "description": "A complete car wash with premium wax and polish"
 }
-```
 
-## Cancel subscription
-  - **URL:** /cancel_subscription/<subscription_id>
-  - **Method:** PATCH
-  - **Description:** Cancels an active subscription by setting its status to               inactive and notifying the car microservices to update the car's status.
 
-  - **Path Parameter:**
-      - **subscription_id (integer):** The ID of the subscription to be cancelled.
-   
-  - **Response:**
-      - **200 OK:** Subscription cancelled succesfully.
-        ```json
-        {
-        "message": "Subscription cancelled succesfully"
-         }
-        ```
+```markdown
+## Cancel Subscription
+- **URL:** `/cancel_subscription/<subscription_id>`
+- **Method:** PATCH
+- **Description:** Cancels an active subscription by setting its status to inactive and notifying the car microservice to update the car's status.
 
-      - **400 Not Found:** Subscription not found.
-        ```json
-        {
-        "message": "Subscription not found"
-        }
-        ```
+### Path Parameter:
+- `subscription_id (integer)`: The ID of the subscription to be cancelled.
 
-      - **500 Internal Server Error:** An unexpected error occured.
-        ```json
-        {
-        "error": "OOPS! Something went wrong :(",
-        "message": "Error details"
-        }
-        ```
+### Example Response:
+- **200 OK:**
+  ```json
+  {
+    "message": "Subscription cancelled successfully"
+  }
+
+- **400 Not Found:** Subscription not found.
+  ```json
+  {
+    "message": "Subscription not found"
+  }
+  ```
+
+- **500 Internal Server Error:** An unexpected error occured.
+  ```json
+  {
+    "error": "OOPS! Something went wrong :(",
+    "message": "Error details"
+  }
+  ```
 
 
 
@@ -123,4 +139,4 @@ GET /additional_services/101
 | `JWT_SECRET_KEY` | Yes | - | Secret key for JWT token generation |
 | `PORT` | No | 5000 | Port to run the service on |
 | `SQLITE_DB_PATH` | Yes | - | Path to SQLite database file |
-| `CAR_MICROSERVICE_URL` | Yes | - | Path to SQLite database file |
+| `CAR_MICROSERVICE_URL` | Yes | - | Path to the car microservice for status updates and retrievals |

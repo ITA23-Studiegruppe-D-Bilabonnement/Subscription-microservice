@@ -32,6 +32,11 @@ swagger_config = {
                     "endpoint": 'get_additional_service',
                     "route": '/additional_services/<service_id>',
                     "spec": '/swagger/get_additional_service.yaml'
+                },
+                {
+                    "endpoint": 'cancel_subscription',
+                    "route": '/cancel_subscription/<subscription_id>',
+                    "spec": '/swagger/cancel_subscription.yaml'           
                 }
             ],
             "rule_filter": lambda rule: True,

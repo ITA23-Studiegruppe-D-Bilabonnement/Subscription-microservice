@@ -1,17 +1,10 @@
 tags:
   - name: Subscription Management
-summary: Get subscriptions by customer ID
-description: Retrieves all subscriptions for a specific customer.
-parameters:
-  - in: path
-    name: customer_id
-    required: true
-    type: integer
-    description: The ID of the customer whose subscriptions you want to retrieve.
-    example: 1
+summary: Retrieve subscriptions for the logged-in user
+description: Retrieve all subscriptions for the authenticated user.
 responses:
   200:
-    description: Subscriptions retrieved successfully
+    description: Successfully retrieved subscriptions.
     schema:
       type: object
       properties:
@@ -25,19 +18,39 @@ responses:
                 example: 1
               customer_id:
                 type: integer
-                example: 1
+                example: 123
+              first_name:
+                type: string
+                example: "John"
+              last_name:
+                type: string
+                example: "Doe"
               car_id:
                 type: integer
                 example: 42
               subscription_start_date:
                 type: string
+                format: date
                 example: "2024-01-01"
               subscription_end_date:
                 type: string
+                format: date
                 example: "2024-12-31"
+              subscription_status:
+                type: boolean
+                example: true
               car_price:
                 type: float
                 example: 15000.0
+              car_brand:
+                type: string
+                example: "Tesla"
+              car_model:
+                type: string
+                example: "Model S"
+              engine_type:
+                type: string
+                example: "Electric"
               additional_service:
                 type: array
                 items:
@@ -56,21 +69,18 @@ responses:
                 type: float
                 example: 15250.0
   404:
-    description: Subscriptions not found
+    description: No subscriptions found.
     schema:
       type: object
       properties:
         message:
           type: string
-          example: "Subscription not found"
+          example: "No subscriptions found"
   500:
-    description: Internal server error
+    description: Internal server error.
     schema:
       type: object
       properties:
         error:
           type: string
-          example: "OOPS! Something went wrong :("
-        message:
-          type: string
-          example: "Error details"
+          example: "Internal server error occurred"
