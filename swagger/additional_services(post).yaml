@@ -35,7 +35,7 @@ responses:
       properties:
         error:
           type: string
-          example: "Field is required"
+          example: "The 'service_name' field is required."
   500:
     description: Internal server error.
     schema:
@@ -43,4 +43,4 @@ responses:
       properties:
         error:
           type: string
-          example: "OOPS! Something went wrong :("
+          example: "An unexpected error occurred while creating the additional service."

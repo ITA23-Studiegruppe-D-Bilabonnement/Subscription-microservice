@@ -1,13 +1,15 @@
 tags:
   - name: Subscription Management
 summary: Cancel a subscription
-description: Cancels a subscription by setting its status to inactive and notifying the car microservice.
+description: Cancels a subscription by setting its status to inactive in the database and notifying the car microservice to update the car's status.
 parameters:
   - in: path
     name: subscription_id
     required: true
-    type: integer
-    example: 1
+    description: The ID of the subscription to cancel.
+    schema:
+      type: integer
+      example: 1
 responses:
   200:
     description: Subscription cancelled successfully.
@@ -25,11 +27,3 @@ responses:
         message:
           type: string
           example: "Subscription not found"
-  500:
-    description: Internal server error.
-    schema:
-      type: object
-      properties:
-        error:
-          type: string
-          example: "OOPS! Something went wrong :("

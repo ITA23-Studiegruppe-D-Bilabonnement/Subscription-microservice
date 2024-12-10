@@ -19,9 +19,9 @@ swagger_config = {
                     "spec": '/swagger/create_subscription.yaml'
                 },
                 {
-                    "endpoint": 'get_subscription',
-                    "route": '/subscription/<customer_id>',
-                    "spec": '/swagger/get_subscription.yaml'
+                    "endpoint": 'get_subscriptions_by_customer',
+                    "route": '/subscription',
+                    "spec": '/swagger/get_subscriptions_by_customer.yaml'
                 },
                 {
                     "endpoint": 'create_additional_service',
@@ -36,7 +36,12 @@ swagger_config = {
                 {
                     "endpoint": 'cancel_subscription',
                     "route": '/cancel_subscription/<subscription_id>',
-                    "spec": '/swagger/cancel_subscription.yaml'           
+                    "spec": '/swagger/cancel_subscription.yaml'
+                },
+                {
+                    "endpoint": 'get_all_subscriptions',
+                    "route": '/getall_subscriptions',
+                    "spec": '/swagger/get_all_subscriptions.yaml'
                 }
             ],
             "rule_filter": lambda rule: True,

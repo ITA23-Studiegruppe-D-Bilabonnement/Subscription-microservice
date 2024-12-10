@@ -1,10 +1,18 @@
 tags:
   - name: Subscription Management
-summary: Retrieve subscriptions for the logged-in user
-description: Retrieve all subscriptions for the authenticated user.
+summary: Get subscriptions for the logged-in user
+description: Retrieves all subscriptions for the currently logged-in user. Includes details about cars, additional services, and calculated total price.
+parameters:
+  - in: header
+    name: Authorization
+    required: true
+    description: Bearer token for JWT authentication.
+    schema:
+      type: string
+      example: "Bearer <your-token>"
 responses:
   200:
-    description: Successfully retrieved subscriptions.
+    description: Subscriptions retrieved successfully.
     schema:
       type: object
       properties:
@@ -27,21 +35,19 @@ responses:
                 example: "Doe"
               car_id:
                 type: integer
-                example: 42
+                example: 45
               subscription_start_date:
                 type: string
-                format: date
                 example: "2024-01-01"
               subscription_end_date:
                 type: string
-                format: date
                 example: "2024-12-31"
               subscription_status:
                 type: boolean
                 example: true
               car_price:
                 type: float
-                example: 15000.0
+                example: 50000.0
               car_brand:
                 type: string
                 example: "Tesla"
@@ -58,24 +64,35 @@ responses:
                   properties:
                     id:
                       type: integer
-                      example: 101
+                      example: 1
                     service_name:
                       type: string
                       example: "Premium Wash"
                     price:
                       type: float
                       example: 250.0
+                    description:
+                      type: string
+                      example: "A complete car wash with premium wax and polish"
               total_price:
                 type: float
-                example: 15250.0
+                example: 50250.0
+  401:
+    description: Missing or invalid Authorization header.
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Missing Authorization header"
   404:
-    description: No subscriptions found.
+    description: No subscriptions found for the user.
     schema:
       type: object
       properties:
         message:
           type: string
-          example: "No subscriptions found"
+          example: "Subscription not found"
   500:
     description: Internal server error.
     schema:

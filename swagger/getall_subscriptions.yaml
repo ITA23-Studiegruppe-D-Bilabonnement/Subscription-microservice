@@ -1,0 +1,52 @@
+tags:
+  - name: Subscriptions
+summary: Get all subscriptions
+description: Retrieves all subscriptions from the database.
+responses:
+  200:
+    description: Subscriptions retrieved successfully.
+    schema:
+      type: object
+      properties:
+        subscriptions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 1
+              customer_id:
+                type: integer
+                example: 123
+              car_id:
+                type: integer
+                example: 45
+              additional_service_id:
+                type: string
+                example: "[1, 2, 3]"
+              subscription_start_date:
+                type: string
+                example: "2024-01-01"
+              subscription_end_date:
+                type: string
+                example: "2024-12-31"
+              subscription_status:
+                type: boolean
+                example: true
+  404:
+    description: Subscriptions not found.
+    schema:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Subscriptions not found"
+  500:
+    description: Internal server error.
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "OOPS! Something went wrong :("

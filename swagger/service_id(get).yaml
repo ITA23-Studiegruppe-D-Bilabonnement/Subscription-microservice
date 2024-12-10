@@ -1,16 +1,18 @@
 tags:
   - name: Additional Services
-summary: Retrieve additional service by ID
-description: Retrieves details of a specific additional service by its ID.
+summary: Get additional service details by service ID
+description: Retrieves details of an additional service from the database based on the provided service ID.
 parameters:
   - in: path
     name: service_id
     required: true
-    type: integer
-    example: 101
+    description: The ID of the additional service to retrieve.
+    schema:
+      type: integer
+      example: 1
 responses:
   200:
-    description: Additional service retrieved successfully.
+    description: Additional service details retrieved successfully.
     schema:
       type: object
       properties:
@@ -21,7 +23,7 @@ responses:
             properties:
               id:
                 type: integer
-                example: 101
+                example: 1
               service_name:
                 type: string
                 example: "Premium Wash"
@@ -46,4 +48,4 @@ responses:
       properties:
         error:
           type: string
-          example: "OOPS! Something went wrong :("
+          example: "An unexpected error occurred."

@@ -1,7 +1,7 @@
 tags:
   - name: Subscription Management
 summary: Create a new subscription
-description: Create a new subscription for the logged-in user.
+description: Creates a new subscription for the logged-in user and notifies the car microservice about the subscription status update.
 parameters:
   - in: body
     name: body
@@ -12,13 +12,12 @@ parameters:
       properties:
         car_id:
           type: integer
-          example: 42
+          example: 45
         additional_service_id:
           type: array
           items:
             type: integer
-          description: List of IDs for additional services.
-          example: [101, 102]
+          example: [1, 2, 3]
         subscription_start_date:
           type: string
           format: date
@@ -29,7 +28,7 @@ parameters:
           example: "2024-12-31"
         subscription_status:
           type: boolean
-          default: true
+          example: true
 responses:
   201:
     description: Subscription created successfully.
@@ -40,13 +39,13 @@ responses:
           type: string
           example: "Subscription created successfully"
   400:
-    description: Bad Request.
+    description: Bad Request. Missing or invalid fields in the request body.
     schema:
       type: object
       properties:
         error:
           type: string
-          example: "Field is required"
+          example: "car_id is required"
   500:
     description: Internal server error.
     schema:

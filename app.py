@@ -42,10 +42,10 @@ def homepoint():
             },
             {
                 "PATH": "/subscription",
-                "METHOD": "POST",
-                "DESCRIPTION": "Create a new subscription",
+                "METHODS": ["POST", "GET"],
+                "DESCRIPTION": "POST: Create a new subscription | GET: Retrieve subscriptions for the current logged-in user",
                 "BODY": {
-                    "customer_id": "INTEGER",
+                    "customer_id": "INTEGER (only for POST)",
                     "car_id": "INTEGER",
                     "additional_service_id": "ARRAY of INTEGER",
                     "subscription_start_date": "STRING (YYYY-MM-DD)",
@@ -54,12 +54,9 @@ def homepoint():
                 }
             },
             {
-                "PATH": "/subscription/<customer_id>",
+                "PATH": "/getall_subscriptions",
                 "METHOD": "GET",
-                "DESCRIPTION": "Retrieve subscriptions for a specific user",
-                "PARAMETER": {
-                    "customer_id": "INTEGER"
-                }
+                "DESCRIPTION": "Retrieve all subscriptions"
             },
             {
                 "PATH": "/additional_services",
@@ -272,7 +269,7 @@ def get_subscription_by_customer():
                 try:
                     response = requests.get(f"{DB_PATH_cars}/cars")
                     response.raise_for_status()  # Check if the request was successful
-                    print(f"Car service response: {response.text}")  # Debugging log
+                    print(f"Car service response: {response.text}")
                     cars = response.json()
 
                     # Ensure cars is a list
@@ -335,6 +332,28 @@ def get_subscription_by_customer():
     except Exception as e:
         print(f"Internal server error: {e}")
         return jsonify({'error': 'Internal server error occurred'}), 500
+
+
+
+
+
+
+# -----------------------------------------------------
+# Get all subscriptions
+
+@app.route('/getall_subscriptions', methods=['GET'])
+@swag_from("swagger/getall_subscriptions.yaml")
+def get_all_subscriptions():
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        c.execute("SELECT * FROM subscription")
+        subscriptions = c.fetchall()
+
+    if not subscriptions:
+        return jsonify({'message': 'Subscriptions not found'}), 404
+
+    return jsonify({'subscriptions': [dict(row) for row in subscriptions]}), 200
 
 
 
