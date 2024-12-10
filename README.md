@@ -61,10 +61,9 @@ This microservice is designed for managing customer subscriptions, associated ca
 - **Response:**
   - `200 OK`: Returns a list of all subscriptions.
 
-  ```json
+  
+```json
 {
-  "subscriptions": [
-    {
       "id": 1,
       "customer_id": 123,
       "car_id": 42,
@@ -72,20 +71,9 @@ This microservice is designed for managing customer subscriptions, associated ca
       "subscription_start_date": "2024-01-01",
       "subscription_end_date": "2024-12-31",
       "subscription_status": true
-    },
-    {
-      "id": 2,
-      "customer_id": 124,
-      "car_id": 43,
-      "additional_service_id": "[4, 5]",
-      "subscription_start_date": "2024-02-01",
-      "subscription_end_date": "2024-12-31",
-      "subscription_status": false
     }
-  ]
-}
-
-  ```
+```
+    
   - `404 Not found`: If no subscriptions are found in the database.
 
 
@@ -168,7 +156,7 @@ This microservice is designed for managing customer subscriptions, associated ca
   "price": 250.0,
   "description": "A complete car wash with premium wax and polish"
 }
-
+```
 
 
 
