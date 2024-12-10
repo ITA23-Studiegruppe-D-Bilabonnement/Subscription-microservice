@@ -6,8 +6,8 @@ This microservice is designed for managing customer subscriptions, associated ca
 ## Available Endpoints
 
 ### Subscriptions
-- `POST /subscription`: Create a new subscription.
-- `GET /subscription/<customer_id>`: Retrieve subscriptions by customer ID.
+- `POST /create`: Create a new subscription.
+- `GET /fetch`: Retrieve subscriptions logged-in user.
 - `PATCH /cancel_subscription/<subscription_id>`: Cancel an active subscription.
 
 ### Additional Services
@@ -20,7 +20,7 @@ This microservice is designed for managing customer subscriptions, associated ca
 ## Endpoints
 
 ## Create a New Subscription
-  - **URL:** /subscription
+  - **URL:** /create
   - **Method:** POST
   - **Description:** Creates a new subscription for a customer.
   - **Request Body:**
@@ -41,7 +41,7 @@ This microservice is designed for managing customer subscriptions, associated ca
 
 
 ## Retrieve Subscriptions by current_userid
-  - **URL:** /subscription
+  - **URL:** /fetch
   - **Method:** GET
   - **Description:** Retrieves all subscriptions for the logged-in user.
  

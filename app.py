@@ -41,23 +41,31 @@ def homepoint():
                 "DESCRIPTION": "Shows available endpoints and service information"
             },
             {
-                "PATH": "/subscription",
-                "METHODS": ["POST", "GET"],
-                "DESCRIPTION": "POST: Create a new subscription | GET: Retrieve subscriptions for the current logged-in user",
+                "PATH": "/create-subscription",
+                "METHODS": ["POST"],
+                "DESCRIPTION": "Create a new subscription",
                 "BODY": {
-                    "customer_id": "INTEGER (only for POST)",
-                    "car_id": "INTEGER",
-                    "additional_service_id": "ARRAY of INTEGER",
-                    "subscription_start_date": "STRING (YYYY-MM-DD)",
-                    "subscription_end_date": "STRING (YYYY-MM-DD)",
-                    "subscription_status": "BOOLEAN (default: TRUE)"
+                "customer_id": "INTEGER (required)",
+                "car_id": "INTEGER (required)",
+                "additional_service_id": "ARRAY of INTEGER (required)",
+                "subscription_start_date": "STRING (YYYY-MM-DD, required)",
+                "subscription_end_date": "STRING (YYYY-MM-DD, required)",
+                "subscription_status": "BOOLEAN (default: TRUE)"
                 }
             },
+            {
+                "PATH": "/get-subscriptions",
+                "METHODS": ["GET"],
+                "DESCRIPTION": "Retrieve all subscriptions for the current logged-in user",
+                "BODY": {}
+            },
+
             {
                 "PATH": "/getall_subscriptions",
                 "METHOD": "GET",
                 "DESCRIPTION": "Retrieve all subscriptions"
             },
+
             {
                 "PATH": "/additional_services",
                 "METHOD": "POST",
@@ -128,9 +136,9 @@ init_db()
 # ENDPOINTS POST
 
 # Create a new subscription
-@app.route('/subscription', methods=['POST'])
+@app.route('/create', methods=['POST'])
 @jwt_required()
-@swag_from("swagger/subscription(post).yaml")
+@swag_from("swagger/create_subscription.yaml")
 def create_subscription():
     data = request.get_json()
     required_fields = ['car_id', 'additional_service_id', 'subscription_start_date', 'subscription_end_date', 'subscription_status']
@@ -218,9 +226,9 @@ def create_additional_services():
 # ENDPOINTS GET
 
 # Get a subscription for the current logged in user.
-@app.route('/subscription', methods=['GET'])
+@app.route('/fetch', methods=['GET'])
 @jwt_required()
-@swag_from("swagger/customer_id(get).yaml")
+@swag_from("swagger/get_subscription.yaml")
 def get_subscription_by_customer():
     
     # Get the current logged in user
