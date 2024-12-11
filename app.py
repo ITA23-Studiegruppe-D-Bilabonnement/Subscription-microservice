@@ -164,10 +164,10 @@ def create_subscription():
             return jsonify({'error': 'additional_service_id must be a list'}), 400
 
 
-    
     #Notify the cars microservice that a new subscription has been created
     car_id = data['car_id']
     print(car_id)
+
     try:
         response = requests.put(f"{DB_PATH_cars}/update-status/{car_id}")
         response.raise_for_status()  # Check if the request was successful
@@ -178,23 +178,29 @@ def create_subscription():
     
     # Save additional services as a JSON string
     additional_service_id_json = json.dumps(additional_service_id)
+    try:
+            # Save the subscription to the database
+        with sqlite3.connect(DB_PATH) as conn:
+            c = conn.cursor()
+            c.execute('''
+            INSERT INTO subscription (customer_id, car_id, additional_service_id, subscription_start_date, subscription_end_date, subscription_status)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''',( 
+            current_userid,
+            data['car_id'], 
+            additional_service_id_json,
+            data['subscription_start_date'], 
+            data['subscription_end_date'], 
+            data['subscription_status']
+        ))
+        conn.commit()
+        return jsonify({'message': 'Subscription created successfully'}), 201
 
-    # Save the subscription to the database
-    with sqlite3.connect(DB_PATH) as conn:
-        c = conn.cursor()
-        c.execute('''
-        INSERT INTO subscription (customer_id, car_id, additional_service_id, subscription_start_date, subscription_end_date, subscription_status)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''',( 
-        current_userid,
-        data['car_id'], 
-        additional_service_id_json,
-        data['subscription_start_date'], 
-        data['subscription_end_date'], 
-        data['subscription_status']
-    ))
-    conn.commit()
-    return jsonify({'message': 'Subscription created successfully'}), 201
+    except Exception as e:
+        return jsonify({"error":f"{e}"})
+
+
+    
 
 
 
