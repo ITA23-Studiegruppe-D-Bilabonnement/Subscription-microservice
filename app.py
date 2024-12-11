@@ -7,7 +7,7 @@ from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, creat
 from dotenv import load_dotenv
 from flasgger import Swagger, swag_from
 from swagger.swagger_config import init_swagger
-from flask_cors import CORS
+
 
 # Load environment variables
 load_dotenv()
@@ -28,8 +28,7 @@ jwt = JWTManager(app)
 # Initialize Swagger
 init_swagger(app)
 
-# Cross-Origin Resource Sharing
-CORS(app)
+
 
 
 
