@@ -7,6 +7,7 @@ from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, creat
 from dotenv import load_dotenv
 from flasgger import Swagger, swag_from
 from swagger.swagger_config import init_swagger
+from datetime import datetime
 
 
 # Load environment variables
@@ -44,38 +45,34 @@ def homepoint():
                 "DESCRIPTION": "Shows available endpoints and service information"
             },
             {
-                "PATH": "/create-subscription",
-                "METHODS": ["POST"],
+                "PATH": "/create",
+                "METHOD": "POST",
                 "DESCRIPTION": "Create a new subscription",
                 "BODY": {
-                "customer_id": "INTEGER (required)",
-                "car_id": "INTEGER (required)",
-                "additional_service_id": "ARRAY of INTEGER (required)",
-                "subscription_start_date": "STRING (YYYY-MM-DD, required)",
-                "subscription_end_date": "STRING (YYYY-MM-DD, required)",
-                "subscription_status": "BOOLEAN (default: TRUE)"
+                    "car_id": "INTEGER (required)",
+                    "additional_service_id": "ARRAY of INTEGER (required)",
+                    "subscription_start_date": "STRING (YYYY-MM-DD, required)",
+                    "subscription_end_date": "STRING (YYYY-MM-DD, required)",
+                    "subscription_status": "BOOLEAN (default: TRUE)"
                 }
             },
             {
-                "PATH": "/get-subscriptions",
-                "METHODS": ["GET"],
-                "DESCRIPTION": "Retrieve all subscriptions for the current logged-in user",
-                "BODY": {}
+                "PATH": "/fetch",
+                "METHOD": "GET",
+                "DESCRIPTION": "Retrieve all subscriptions for the current logged-in user"
             },
-
             {
                 "PATH": "/getall_subscriptions",
                 "METHOD": "GET",
                 "DESCRIPTION": "Retrieve all subscriptions"
             },
-
             {
                 "PATH": "/additional_services",
                 "METHOD": "POST",
                 "DESCRIPTION": "Create a new additional service",
                 "BODY": {
-                    "service_name": "STRING",
-                    "price": "FLOAT",
+                    "service_name": "STRING (required)",
+                    "price": "FLOAT (required)",
                     "description": "STRING"
                 }
             },
@@ -84,7 +81,7 @@ def homepoint():
                 "METHOD": "GET",
                 "DESCRIPTION": "Retrieve details of an additional service by ID",
                 "PARAMETER": {
-                    "service_id": "INTEGER"
+                    "service_id": "INTEGER (required)"
                 }
             },
             {
@@ -92,10 +89,7 @@ def homepoint():
                 "METHOD": "PATCH",
                 "DESCRIPTION": "Cancel a subscription by setting its status to inactive and notifying the car microservice",
                 "PARAMETER": {
-                    "subscription_id": "INTEGER"
-                },
-                "BODY": {
-                    "car_id": "INTEGER"
+                    "subscription_id": "INTEGER (required)"
                 }
             }
         ]
@@ -117,8 +111,8 @@ def init_db():
             customer_id INTEGER NOT NULL,
             car_id INTEGER NOT NULL,
             additional_service_id TEXT NOT NULL,   
-            subscription_start_date TEXT NOT NULL,
-            subscription_end_date TEXT NOT NULL,
+            subscription_start_date DATETIME NOT NULL,
+            subscription_end_date DATETIME NOT NULL,
             subscription_status BOOLEAN NOT NULL DEFAULT 1
         );
     ''')
@@ -145,12 +139,13 @@ init_db()
 def create_subscription():
     data = request.get_json()
     required_fields = ['car_id', 'additional_service_id', 'subscription_start_date', 'subscription_end_date', 'subscription_status']
+   
+     # Get the current logged in user
+    current_userid = get_jwt_identity()
+   
     # Standard subscription status is 1 = active
     subscription_status = data.get('subscription_status', True)
-
-    # Get the current logged in user
-    current_userid = get_jwt_identity()
-    
+  
 
     # Check if the required fields are present
     for field in required_fields:
@@ -158,26 +153,48 @@ def create_subscription():
             return jsonify({'error': f'{field} is required'}), 400
 
 
+
     # Check if the additional_service_id is a list
     additional_service_id = data['additional_service_id']
     if not isinstance(additional_service_id, list):
             return jsonify({'error': 'additional_service_id must be a list'}), 400
+    # Save additional services as a JSON string
+    additional_service_id_json = json.dumps(additional_service_id)
+
+
+    # Validate subscription_start_date and subscription_end_date
+    try:
+        subcription_start_date = datetime.strptime(data['subscription_start_date'], '%Y-%m-%d')
+        subscription_end_date = datetime.strptime(data['subscription_end_date'], '%Y-%m-%d')
+
+    except ValueError:
+        return jsonify({'error': 'Dates must be in YYYY-MM-DD format'}), 400    
+
+
+   # Validate if the specific car_id exists
+    car_id = data['car_id']
+    try:
+        response = requests.get(f'{DB_PATH_cars}/car/{car_id}')
+        if response.status_code != 200:
+            return jsonify({'error': f'Car with ID {car_id} not found'}), 400
+        
+        car_data = response.json()
+    except requests.exceptions.RequestException:
+        return jsonify({'error': f'Could not retrieve the car with ID {car_id}'}), 400
+    
 
 
     #Notify the cars microservice that a new subscription has been created
-    car_id = data['car_id']
-    print(car_id)
-
     try:
         response = requests.put(f"{DB_PATH_cars}/update-status/{car_id}")
-        response.raise_for_status()  # Check if the request was successful
+        if response.status_code != 200:
+            return jsonify({'error': 'Error notifying the car microservice'}), 500
+        
     except requests.exceptions.RequestException as e:    
-        print(f"{DB_PATH_cars}/update-status/{car_id}")
         return jsonify({'error': 'Error notifying the car microservice'}), 500
     
     
-    # Save additional services as a JSON string
-    additional_service_id_json = json.dumps(additional_service_id)
+
     try:
             # Save the subscription to the database
         with sqlite3.connect(DB_PATH) as conn:
@@ -185,19 +202,19 @@ def create_subscription():
             c.execute('''
             INSERT INTO subscription (customer_id, car_id, additional_service_id, subscription_start_date, subscription_end_date, subscription_status)
             VALUES (?, ?, ?, ?, ?, ?)
-        ''',( 
+        ''',(  
             current_userid,
-            data['car_id'], 
+            car_id, 
             additional_service_id_json,
-            data['subscription_start_date'], 
-            data['subscription_end_date'], 
-            data['subscription_status']
+            subcription_start_date.strftime('%Y-%m-%d %H:%M:%S'),
+            subscription_end_date.strftime("%Y-%m-%d %H:%M:%S"), 
+            subscription_status
         ))
         conn.commit()
         return jsonify({'message': 'Subscription created successfully'}), 201
 
     except Exception as e:
-        return jsonify({"error":f"{e}"})
+        return jsonify({"error":f"{e}"}),500
 
 
     
