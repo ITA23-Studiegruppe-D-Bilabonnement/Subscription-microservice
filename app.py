@@ -161,7 +161,6 @@ def create_subscription():
     # Save additional services as a JSON string
     additional_service_id_json = json.dumps(additional_service_id)
 
-
     # Validate subscription_start_date and subscription_end_date
     try:
         subcription_start_date = datetime.strptime(data['subscription_start_date'], '%Y-%m-%d')
@@ -171,7 +170,8 @@ def create_subscription():
         return jsonify({'error': 'Dates must be in YYYY-MM-DD format'}), 400    
 
 
-   # Validate if the specific car_id exists
+
+   # Validate if the specific car_id exists and if it´s already rented
     car_id = data['car_id']
     try:
         response = requests.get(f'{DB_PATH_cars}/car/{car_id}')
@@ -179,6 +179,8 @@ def create_subscription():
             return jsonify({'error': f'Car with ID {car_id} not found'}), 400
         
         car_data = response.json()
+        if car_data.get('is_rented', 0) == 1:
+            return jsonify({'error': f'Car with ID {car_id} is already rented' }), 400
     except requests.exceptions.RequestException:
         return jsonify({'error': f'Could not retrieve the car with ID {car_id}'}), 400
     
@@ -248,6 +250,9 @@ def create_additional_services():
 
 
 
+
+
+
 # -----------------------------------------------------
 # ENDPOINTS GET
 
@@ -257,35 +262,37 @@ def create_additional_services():
 @swag_from("swagger/get_subscription.yaml")
 def get_subscription_by_customer():
     
-    # Get the current logged in user
+
+        # Get JWT token and current customer ID (user_id)
     try:
-        current_userid = get_jwt_identity()
-        
-        # Get the token from the Authorization header
         jwt_token = request.headers.get('Authorization', '').split(' ')[1]
         if not jwt_token:
             return jsonify({'error': 'Missing Authorization header'}), 401
-
-        # Prepare the headers for the request to the customer microservice
+    
         headers = {'Authorization': f'Bearer {jwt_token}'}
+        current_userid = get_jwt_identity()
 
 
+
+        # Fetch customer details
         try:
             customer_response = requests.get(f"{DB_PATH_customer}/user", headers=headers)
-            customer_response.raise_for_status()  # Check if the request was successful
-            customer_data = customer_response.json()
-            first_name = customer_data.get('first_name', 'Unknown')
-            last_name = customer_data.get('last_name', 'Unknown')
+            if customer_response.status_code == 200:
+                customer_data = customer_response.json()
+                first_name = customer_data.get('first_name', 'Unknown')
+                last_name = customer_data.get('last_name', 'Unknown')
+            else:
+                return jsonify({'error': 'Error fetching user data from customer microservice'}), 500   
 
         except requests.exceptions.RequestException as e:
             return jsonify({'error': 'Error fetching user data from customer microservice', 'message': str(e)}), 500
      
     
+
+        # Fetch subscriptions for the current user
         with sqlite3.connect(DB_PATH) as conn:
             conn.row_factory = sqlite3.Row
             c = conn.cursor()
-
-            # Gets all subscriptions for a customer
             c.execute("SELECT * FROM subscription WHERE customer_id = ?", (current_userid,))
             subscriptions = c.fetchall()
 
@@ -295,38 +302,32 @@ def get_subscription_by_customer():
             results = []
 
 
+            # Process each subscription
             for subscription in subscriptions:
-                # Decode the additional_service_id from JSON
+                # Decode the additional_services
                 additional_service_ids = json.loads(subscription['additional_service_id'])
      
-                # Get information about the car from the car microservice
+
+                # Fetch car details
                 try:
-                    response = requests.get(f"{DB_PATH_cars}/cars")
-                    response.raise_for_status()  # Check if the request was successful
-                    print(f"Car service response: {response.text}")
-                    cars = response.json()
-
-                    # Ensure cars is a list
-                    if not isinstance(cars, list):
-                        return jsonify({'error': 'Invalid response from car microservice'}), 500
-
-                    # Find car details by car_id
-                    car = next((car for car in cars if car.get('car_id') == subscription['car_id']), None)
-                    car_price = car['price'] if car else 0
-                    car_brand = car.get('car_brand', 'Unknown')
-                    car_model = car.get('car_model', 'Unknown')
-                    engine_type = car.get('engine_type', 'Unknown')
-
+                    response = requests.get(f"{DB_PATH_cars}/car/{subscription['car_id']}")
+                    if response.status_code == 200:
+                        car = response.json()
+                        car_price = car.get('price', 0)
+                        car_brand = car.get('car_brand', 'Unknown')
+                        car_model = car.get('car_model', 'Unknown')
+                        engine_type = car.get('engine_type', 'Unknown')
+                    else:
+                        return jsonify({'error': 'Error fetching car data'}), 500
                 except requests.exceptions.RequestException as e:
-                    print(f"Request error: {e}")
-                    car_price = 0
-                    car_brand = 'Unknown'
-                    car_model = 'Unknown'
-                    engine_type = 'Unknown'
+                        car_price = 0
+                        car_brand = 'Unknown'
+                        car_model = 'Unknown'
+                        engine_type = 'Unknown'                    
                     
                     
 
-                # Get information about the additional services
+                # Fetch additional services details
                 additional_services = []
                 for service_id in additional_service_ids:
                     c.execute("SELECT * FROM additional_services WHERE id = ?", (service_id,))
@@ -339,11 +340,15 @@ def get_subscription_by_customer():
                             "description": service['description']
                         })
 
+
                 # Calculate the total price of additional services and the subscription
                 price_of_additional_services = sum(service["price"] for service in additional_services)
                 total_price = car_price + price_of_additional_services
 
-                # Get the results in a list
+
+
+
+                # Append subscription details to results
                 results.append({
                     "id": subscription['id'],
                     "customer_id": subscription['customer_id'],
