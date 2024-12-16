@@ -3,12 +3,38 @@
 This microservice is designed for managing customer subscriptions, associated car details, and additional services. Built with Flask, it provides a RESTful API to handle the creation, retrieval, and management of subscriptions and services. The service interacts with a SQLite database and integrates with external microservices.
 
 
+## File structure
+```
+project/
+├── app.py                   
+├── swagger/                 
+│   ├── additional_services(post).yaml          
+│   ├── cancel_subscription.yaml           
+│   ├── create_subscription.yaml        
+│   ├── get_subscription.yaml    
+│   └── getall_subscriptions.yaml
+    ├── service_id(get).yaml    
+    ├── swagger_config.py    
+├── .dockerignore            
+├── .env                     
+├── .github/                 
+│   └── workflows/           
+│       └── main_Subscription-microservice.yml 
+├── .gitignore               
+├── Dockerfile               
+├── README.md                
+├── requirements.txt
+```
+
+
+
 ## Available Endpoints
 
 ### Subscriptions
 - `POST /create`: Create a new subscription.
 - `GET /fetch`: Retrieve subscriptions logged-in user.
 - `PATCH /cancel_subscription/<subscription_id>`: Cancel an active subscription.
+- `GET /getall_subscriptions`: Get all subscriptions
 
 ### Additional Services
 - `POST /additional_services`: Add a new additional service.
@@ -31,7 +57,7 @@ This microservice is designed for managing customer subscriptions, associated ca
     "additional_service_id": [101, 102],
     "subscription_start_date": "2024-01-01",
     "subscription_end_date": "2024-12-31",
-    "subscriptions_status": true
+    "subscription_status": true
   }
   ```
 - **Response:**

@@ -153,30 +153,11 @@ def create_subscription():
 
 
 
-    # Check if the additional_service_id is a list
-    additional_service_id = data['additional_service_id']
-    if not isinstance(additional_service_id, list):
-            return jsonify({'error': 'additional_service_id must be a list'}), 400
-    
-    # Validate if the additional_service_id exists
-    try:
-        for service_id in additional_service_id:
-            response = requests.get(f'{DB_PATH}/additional_services/{service_id}')
-            if response.status_code != 200:
-                return jsonify({'error': f'Additional service with ID {service_id} not found'}), 400
-    except requests.exceptions.RequestException:
-        return jsonify({'error': f'Could not retrieve the additional service with ID {service_id}'}), 400
-    
-    # Save additional services as a JSON string
-    additional_service_id_json = json.dumps(additional_service_id)
-
-
-
     # Validate subscription_start_date and subscription_end_date
     try:
         subcription_start_date = datetime.strptime(data['subscription_start_date'], '%Y-%m-%d')
         subscription_end_date = datetime.strptime(data['subscription_end_date'], '%Y-%m-%d')
-
+        
     except ValueError:
         return jsonify({'error': 'Dates must be in YYYY-MM-DD format'}), 400    
 
@@ -195,6 +176,29 @@ def create_subscription():
     except requests.exceptions.RequestException:
         return jsonify({'error': f'Could not retrieve the car with ID {car_id}'}), 400
     
+
+
+
+     # Check if the additional_service_id is a list
+    additional_service_id = data['additional_service_id']
+    if not isinstance(additional_service_id, list):
+            return jsonify({'error': 'additional_service_id must be a list'}), 400
+
+    # Validate if the additional_service_id exists
+    try:
+        with sqlite3 .connect(DB_PATH) as conn:
+            c = conn.cursor()
+            for service_id in additional_service_id:
+                c.execute("SELECT 1 FROM additional_services WHERE id = ?", (service_id,))
+                if not c.fetchone():
+                    return jsonify({'error': f'Additional service with ID {service_id} not found'}), 400
+    except Exception as e:
+        return jsonify({'error': f'Error validating additional services: {e}'}), 500
+    
+    # Save additional services as a JSON string
+    additional_service_id_json = json.dumps(additional_service_id)
+
+
 
 
     #Notify the cars microservice that a new subscription has been created
