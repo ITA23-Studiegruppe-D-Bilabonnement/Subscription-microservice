@@ -146,7 +146,6 @@ def create_subscription():
     # Standard subscription status is 1 = active
     subscription_status = data.get('subscription_status', True)
   
-
     # Check if the required fields are present
     for field in required_fields:
         if field not in data:
@@ -158,8 +157,20 @@ def create_subscription():
     additional_service_id = data['additional_service_id']
     if not isinstance(additional_service_id, list):
             return jsonify({'error': 'additional_service_id must be a list'}), 400
+    
+    # Validate if the additional_service_id exists
+    try:
+        for service_id in additional_service_id:
+            response = requests.get(f'{DB_PATH}/additional_services/{service_id}')
+            if response.status_code != 200:
+                return jsonify({'error': f'Additional service with ID {service_id} not found'}), 400
+    except requests.exceptions.RequestException:
+        return jsonify({'error': f'Could not retrieve the additional service with ID {service_id}'}), 400
+    
     # Save additional services as a JSON string
     additional_service_id_json = json.dumps(additional_service_id)
+
+
 
     # Validate subscription_start_date and subscription_end_date
     try:
