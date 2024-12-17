@@ -66,19 +66,20 @@ project/
 
     ***Example of error messages (400)***
     
-      ```json
+
+  ```json
    {
     "error": "car_id is required"
    }
-    ```
+  ```
   
-      ```json
+  ```json
    {
     "error": "Dates must be in YYYY-MM-DD format"
    }
     ```
   
-     ```json
+    ```json
    {
     "error": "Car with ID 123 not found"
    }
@@ -96,7 +97,7 @@ project/
    }
     ```
   
-      ```json
+  ```json
    {
     "error": "Additional service with ID 456 not found"
    }
@@ -138,20 +139,20 @@ project/
 
 
 
-    
-  ## Add a New Additional Service
-    - **URL:** /additional_services
-    - **Method:** POST
-    - **Description:** Adds a new additional service to the database.
-    - **Request Body:**
 
-      ```json
+## Add a New Additional Service 
+- **URL:** /additional_services
+- **Method:** POST
+- **Description:** Adds a new additional service to the database.
+- **Request Body:**
+
+    ```json
     {
     "service_name": "Premium Wash",
     "price": 250.0,
     "description": "A complete car wash with premium wax and polish"
     }
-      ```
+    ```
 
 - **Response:**
   - `201 Created:` Additional service created successfully.
