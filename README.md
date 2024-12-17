@@ -43,7 +43,6 @@ project/
 
 
 
-## Endpoints
 
 ## Create a New Subscription
   - **URL:** /create
@@ -66,36 +65,37 @@ project/
   - `500 Internal server error`: Unexpected error.
 
     ***Example of error messages (400)***
-    ```json
+    
+      ```json
    {
     "error": "car_id is required"
    }
     ```
-  ,
-     ```json
+  
+      ```json
    {
     "error": "Dates must be in YYYY-MM-DD format"
    }
     ```
-  ,
+  
      ```json
    {
     "error": "Car with ID 123 not found"
    }
     ```
-  ,
+  
      ```json
    {
     "error": "Car with ID 123 is already rented"
    }
     ```
-  ,
+  
      ```json
    {
     "error": "additional_service_id must be a list"
    }
     ```
-  ,
+  
      ```json
    {
     "error": "Additional service with ID 456 not found"
@@ -145,13 +145,13 @@ project/
     - **Description:** Adds a new additional service to the database.
     - **Request Body:**
 
-```json
-{
+    ```json
+    {
     "service_name": "Premium Wash",
     "price": 250.0,
     "description": "A complete car wash with premium wax and polish"
-}
-```
+    }
+    ```
 
 - **Response:**
   - `201 Created:` Additional service created successfully.
