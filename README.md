@@ -30,16 +30,14 @@ project/
 
 ## Available Endpoints
 
-### Subscriptions
-- `POST /create`: Create a new subscription.
-- `GET /fetch`: Retrieve subscriptions logged-in user.
-- `PATCH /cancel_subscription/<subscription_id>`: Cancel an active subscription.
-- `GET /getall_subscriptions`: Get all subscriptions.
-
-### Additional Services
-- `POST /additional_services`: Add a new additional service.
-- `GET /additional_services/<service_id>`: Retrieve additional service details by ID.
-
+| HTTP Method | Action             | Example Endpoint     | Notes                                   |
+|-------------|--------------------|----------------------|-----------------------------------------|
+| `GET`       | Retrieve a resource| `/fetch`             | Fetch a users subscription based on JWT |
+| `POST`      | Create a resource  | `/create`            | Register a new subscription.            |
+| `PATCH`     | Change a subscription| `/cancel_subscription/<subscription_id>`| Change status for a subscription.|
+| `GET`       | Retrieve a resource| `/getall_subscriptions`             | Get all created subscriptions |
+| `POST`      | Create a resource  | `/additional_services`            | Create an additional service.            |
+| `GET`     | Retrieve a resource| `/additional_services/<service_id>`| Get an additional service by ID.|
 
 
 
