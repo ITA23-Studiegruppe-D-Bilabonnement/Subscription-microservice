@@ -178,3 +178,28 @@ project/
 | `SQLITE_DB_PATH` | Yes | - | Path to SQLite database file |
 | `CAR_MICROSERVICE_URL` | Yes | - | Path to the car microservice for status updates and retrievals |
 |`CUSTOMER_MICROSERVICE_URL` | Yes | - | Path to the customer microservice for retrievals |
+
+## Database
+
+The service uses SQLite for persistent user storage. The database schema is as follows:
+
+| Column      | Type      | Constraints          |
+|-------------|-----------|----------------------|
+| `id`        | INTEGER   | PRIMARY KEY AUTOINCREMENT |
+| `customer_id`     | INTEGER      | NOT NULL      |
+| `car_id`| INTEGER      | NOT NULL             |
+| `additional_service_id` | TEXT      |   NOT NULL  |
+| `subscription_start_date`  | DATE      |  NOT NULL     |
+| `subscription_end_date`     | DATE      | NOT NULL      |
+| `subscription_status`     | BOOLEAN      | NOT NULL, DEFAULT 1     |
+
+
+| Column      | Type      | Constraints          |
+|-------------|-----------|----------------------|
+| `id`        | INTEGER   | PRIMARY KEY AUTOINCREMENT |
+| `service_name`     | TEXT      | NOT NULL      |
+| `price`| FLOAT      | NOT NULL             |
+| `description` | TEXT      |        |
+
+
+
