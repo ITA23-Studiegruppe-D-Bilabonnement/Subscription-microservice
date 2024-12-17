@@ -61,7 +61,7 @@ project/
   ```
 - **Response:**
   - `201 Created`: Subscription created successfully.
-  - `400 Bad Request`: Invalid input, such as additional_service_id not being a list.
+  - `400 Bad Request`: Invalid input.
   - `500 Internal server error`: Unexpected error.
 
     ***Example of error messages (400)***
@@ -120,7 +120,7 @@ project/
 ## Get all created subscriptions
   - **URL:** /getall_subscriptions
   - **Method:** GET
-  - **Description:** Retrieves all created subscriptions from database
+  - **Description:** Retrieves all created subscriptions from database.
 
 - **Response:**
   - `200 OK`: Returns a list of all subscriptions.    
@@ -134,8 +134,8 @@ project/
   - **Description:** Cancels an active subscription by setting its status to inactive and notifying the car microservice to update the car's status.
 
   - **Response**
-    - `200 OK`: Subscription cancelled successfully
-    - `404 Not found`: If no subscriptions are found in the database
+    - `200 OK`: Subscription cancelled successfully.
+    - `404 Not found`: If no subscriptions are found in the database.
 
 
 
