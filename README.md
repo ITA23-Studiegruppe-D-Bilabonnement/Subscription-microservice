@@ -96,7 +96,7 @@ project/
    }
     ```
   
-     ```json
+      ```json
    {
     "error": "Additional service with ID 456 not found"
    }
@@ -145,13 +145,13 @@ project/
     - **Description:** Adds a new additional service to the database.
     - **Request Body:**
 
-    ```json
+      ```json
     {
     "service_name": "Premium Wash",
     "price": 250.0,
     "description": "A complete car wash with premium wax and polish"
     }
-    ```
+      ```
 
 - **Response:**
   - `201 Created:` Additional service created successfully.
