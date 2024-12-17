@@ -17,8 +17,8 @@ app = Flask(__name__)
 # Environment variables
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 DB_PATH = os.getenv('SQLITE_DB_PATH')
-DB_PATH_cars = os.getenv('CAR_MICROSERVICE_URL', "https://cars-microservice-a7g2hqakb2cjffef.northeurope-01.azurewebsites.net")
-DB_PATH_customer = os.getenv('CUSTOMER_MICROSERVICE_URL', "https://customer-microservice-b4dsccfkbffjh5cv.northeurope-01.azurewebsites.net")
+car_service_url = os.getenv('CAR_MICROSERVICE_URL', "https://cars-microservice-a7g2hqakb2cjffef.northeurope-01.azurewebsites.net")
+customer_service_url = os.getenv('CUSTOMER_MICROSERVICE_URL', "https://customer-microservice-b4dsccfkbffjh5cv.northeurope-01.azurewebsites.net")
 
 # Port
 PORT = int(os.getenv('PORT', 5000))
@@ -166,7 +166,7 @@ def create_subscription():
    # Validate if the specific car_id exists and if it´s already rented
     car_id = data['car_id']
     try:
-        response = requests.get(f'{DB_PATH_cars}/car/{car_id}')
+        response = requests.get(f'{car_service_url}/car/{car_id}')
         if response.status_code != 200:
             return jsonify({'error': f'Car with ID {car_id} not found'}), 400
         
@@ -203,7 +203,7 @@ def create_subscription():
 
     #Notify the cars microservice that a new subscription has been created
     try:
-        response = requests.put(f"{DB_PATH_cars}/update-status/{car_id}")
+        response = requests.put(f"{car_service_url}/update-status/{car_id}")
         if response.status_code != 200:
             return jsonify({'error': 'Error notifying the car microservice'}), 500
         
@@ -249,19 +249,28 @@ def create_subscription():
 def create_additional_services():
     data = request.get_json()
     required_fields = ['service_name', 'price', 'description']
+   
+    # Check if the required fields are present
+    for field in required_fields:
+        if field not in data:
+            return jsonify({'error': f'{field} is required'}), 400
+
+    try: 
+        with sqlite3.connect(DB_PATH) as conn:
+            c = conn.cursor()
+            c.execute('''
+            INSERT INTO additional_services (service_name, price, description)
+            VALUES (?, ?, ?)
+        ''',( 
+            data['service_name'],
+            data['price'],
+            data['description']
+        ))
+        conn.commit()
+        return jsonify({'message': 'Additional service created successfully'}), 201
     
-    with sqlite3.connect(DB_PATH) as conn:
-        c = conn.cursor()
-        c.execute('''
-        INSERT INTO additional_services (service_name, price, description)
-        VALUES (?, ?, ?)
-    ''',( 
-        data['service_name'],
-        data['price'],
-        data['description']
-    ))
-    conn.commit()
-    return jsonify({'message': 'Additional service created successfully'}), 201
+    except Exception as e:
+        return jsonify({'error': 'Internal server error occurred'}),500
 
 
 
@@ -291,7 +300,7 @@ def get_subscription_by_customer():
 
         # Fetch customer details
         try:
-            customer_response = requests.get(f"{DB_PATH_customer}/user", headers=headers)
+            customer_response = requests.get(f"{customer_service_url}/user", headers=headers)
             if customer_response.status_code == 200:
                 customer_data = customer_response.json()
                 first_name = customer_data.get('first_name', 'Unknown')
@@ -325,7 +334,7 @@ def get_subscription_by_customer():
 
                 # Fetch car details
                 try:
-                    response = requests.get(f"{DB_PATH_cars}/car/{subscription['car_id']}")
+                    response = requests.get(f"{car_service_url}/car/{subscription['car_id']}")
                     if response.status_code == 200:
                         car = response.json()
                         car_price = car.get('price', 0)
@@ -456,9 +465,9 @@ def cancel_subscription(subscription_id):
 
 
     #Notify the cars microservice that subscription has been deactivated
-    test = requests.put(f"{DB_PATH_cars}/update-status/{car_id}")
+    test = requests.put(f"{car_service_url}/update-status/{car_id}")
     print(test)
-    print(f"{DB_PATH_cars}/update-status/{car_id}")
+    print(f"{car_service_url}/update-status/{car_id}")
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
         c.execute("UPDATE subscription SET subscription_status = 0 WHERE id = ?", (subscription_id,))

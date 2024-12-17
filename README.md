@@ -34,7 +34,7 @@ project/
 - `POST /create`: Create a new subscription.
 - `GET /fetch`: Retrieve subscriptions logged-in user.
 - `PATCH /cancel_subscription/<subscription_id>`: Cancel an active subscription.
-- `GET /getall_subscriptions`: Get all subscriptions
+- `GET /getall_subscriptions`: Get all subscriptions.
 
 ### Additional Services
 - `POST /additional_services`: Add a new additional service.
@@ -63,13 +63,50 @@ project/
 - **Response:**
   - `201 Created`: Subscription created successfully.
   - `400 Bad Request`: Invalid input, such as additional_service_id not being a list.
+  - `500 Internal server error`: Unexpected error.
 
+    ***Example of error messages (400)***
+    ```json
+   {
+    "error": "car_id is required"
+   }
+    ```
+  ,
+     ```json
+   {
+    "error": "Dates must be in YYYY-MM-DD format"
+   }
+    ```
+  ,
+     ```json
+   {
+    "error": "Car with ID 123 not found"
+   }
+    ```
+  ,
+     ```json
+   {
+    "error": "Car with ID 123 is already rented"
+   }
+    ```
+  ,
+     ```json
+   {
+    "error": "additional_service_id must be a list"
+   }
+    ```
+  ,
+     ```json
+   {
+    "error": "Additional service with ID 456 not found"
+   }
+    ```     
 
 
 ## Retrieve Subscriptions by current_userid
   - **URL:** /fetch
   - **Method:** GET
-  - **Description:** Retrieves all subscriptions for the logged-in user.
+  - **Description:** Retrieves all subscriptions for the logged-in user. 
  
 - **Response:**
   - `200 OK`: Returns a list of subscriptions in JSON format.
@@ -80,29 +117,13 @@ project/
 
 
 ## Get all created subscriptions
-  - ***URL:*** /getall_subscriptions
-  - ***Method:*** GET
-  - ***Description:*** Retrieves all created subscriptions from database
+  - **URL:** /getall_subscriptions
+  - **Method:** GET
+  - **Description:** Retrieves all created subscriptions from database
 
 - **Response:**
-  - `200 OK`: Returns a list of all subscriptions.
-
-  
-```json
-{
-      "id": 1,
-      "customer_id": 123,
-      "car_id": 42,
-      "additional_service_id": "[1, 2, 3]",
-      "subscription_start_date": "2024-01-01",
-      "subscription_end_date": "2024-12-31",
-      "subscription_status": true
-    }
-```
-    
+  - `200 OK`: Returns a list of all subscriptions.    
   - `404 Not found`: If no subscriptions are found in the database.
-
-
 
 
 
@@ -111,31 +132,9 @@ project/
   - **Method:** PATCH
   - **Description:** Cancels an active subscription by setting its status to inactive and notifying the car microservice to update the car's status.
 
-  
-**Path Parameter:**
-- `subscription_id (integer)`: The ID of the subscription to be cancelled.
-
-### Example Response:
-- **200 OK:**
-  ```json
-  {
-    "message": "Subscription cancelled successfully"
-  }
-
-- **400 Not Found:** Subscription not found.
-  ```json
-  {
-    "message": "Subscription not found"
-  }
-  ```
-
-- **500 Internal Server Error:** An unexpected error occured.
-  ```json
-    {
-    "error": "OOPS! Something went wrong :(",
-    "message": "Error details"
-  }
-  ```
+  - **Response**
+    - `200 OK`: Subscription cancelled successfully
+    - `404 Not found`: If no subscriptions are found in the database
 
 
 
@@ -157,33 +156,18 @@ project/
 - **Response:**
   - `201 Created:` Additional service created successfully.
   - `400 Bad Request:` Invalid input, such as missing required fields.
+  - `500 Internal server error:` Unexpected error.
 
   
+
 ## Retrieve Additional Service by ID
   - **URL:** /additional_services/<service_id>
   - **Method:** GET
   - **Description:** Retrieves details of a specific additional service by its ID.
 
-- **Path Parameter:**
-  - **service_id (integer):** The ID of the additional service.
-
 - **Response:**
   - `200 OK:` Returns details of the additional service in JSON format.
   - `404 Not Found:` No additional service found with the specified ID.
-
-### Example Request:
-`GET /additional_services/101`
-
-### Example Response:
-```json
-{
-  "id": 101,
-  "service_name": "Premium Wash",
-  "price": 250.0,
-  "description": "A complete car wash with premium wax and polish"
-}
-```
-
 
 
 
@@ -194,3 +178,4 @@ project/
 | `PORT` | No | 5000 | Port to run the service on |
 | `SQLITE_DB_PATH` | Yes | - | Path to SQLite database file |
 | `CAR_MICROSERVICE_URL` | Yes | - | Path to the car microservice for status updates and retrievals |
+|`CUSTOMER_MICROSERVICE_URL` | Yes | - | Path to the customer microservice for retrievals |
